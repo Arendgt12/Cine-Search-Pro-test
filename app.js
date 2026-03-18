@@ -11,7 +11,7 @@ class SearchComponent {
 
     // State & Orchestration
     this.cache = new Map();
-    this.debounceTimer = null;
+    this.debounceTimer = null; 
     this.abortController = null;
 
     this.init();
@@ -32,18 +32,20 @@ class SearchComponent {
       this.resultsGrid.innerHTML = "";
       return;
     }
- // 2. Set the 300ms delay
+
+    // 2. Set the 300ms delay
     this.debounceTimer = setTimeout(() => this.executeSearch(query), 300);
   }
 
   async executeSearch(query) {
+    // 3. CACHE CHECK
     if (this.cache.has(query.toLowerCase())) {
       console.log(`%c Cache Hit: ${query}`, "color: #00ff00");
       this.render(this.cache.get(query.toLowerCase()));
       return;
     }
 
-    // 3. ABORT PATTERN
+    // 4. ABORT PATTERN
     if (this.abortController) {
       this.abortController.abort();
     }
@@ -52,9 +54,33 @@ class SearchComponent {
     const signal = this.abortController.signal;
 
     this.setState("loading");
-}
 
-setState(state) {
+    try {
+      const url = `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}`;
+
+      const response = await fetch(url, { signal });
+
+      if (!response.ok) throw new Error("Network response was not ok");
+
+      const data = await response.json();
+
+      this.cache.set(query.toLowerCase(), data.results);
+
+      this.render(data.results);
+    } catch (error) {
+      if (error.name === "AbortError") {
+        console.log(
+          "%c Request Aborted (Red in Network Tab)",
+          "color: #ff9900",
+        );
+      } else {
+        console.error("Fetch Error:", error);
+        this.setState("error");
+      }
+    }
+  }
+
+  setState(state) {
     this.container.dataset.state = state;
   }
 
@@ -88,4 +114,5 @@ setState(state) {
   }
 }
 
+// Instantiate the component
 new SearchComponent();
