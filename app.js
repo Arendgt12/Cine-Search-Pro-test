@@ -32,7 +32,25 @@ class SearchComponent {
       this.resultsGrid.innerHTML = "";
       return;
     }
+ // 2. Set the 300ms delay
+    this.debounceTimer = setTimeout(() => this.executeSearch(query), 300);
+  }
 
+  async executeSearch(query) {
+    if (this.cache.has(query.toLowerCase())) {
+      console.log(`%c Cache Hit: ${query}`, "color: #00ff00");
+      this.render(this.cache.get(query.toLowerCase()));
+      return;
+    }
+
+    // 3. ABORT PATTERN
+    if (this.abortController) {
+      this.abortController.abort();
+    }
+
+    this.abortController = new AbortController();
+    const signal = this.abortController.signal;
+
+    this.setState("loading");
 }
-
 }
