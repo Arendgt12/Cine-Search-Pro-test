@@ -53,4 +53,39 @@ class SearchComponent {
 
     this.setState("loading");
 }
+
+setState(state) {
+    this.container.dataset.state = state;
+  }
+
+  render(movies) {
+    if (movies.length === 0) {
+      this.setState("empty");
+      return;
+    }
+
+    this.setState("success");
+    this.statusText.textContent = `${movies.length} results found.`;
+
+    this.resultsGrid.innerHTML = "";
+
+    movies.forEach((movie) => {
+      const card = document.createElement("div");
+      card.className = "movie-card";
+
+      const title = document.createElement("h3");
+      title.textContent = movie.title;
+
+      const year = document.createElement("p");
+      year.textContent = movie.release_date
+        ? movie.release_date.split("-")[0]
+        : "N/A";
+
+      card.appendChild(title);
+      card.appendChild(year);
+      this.resultsGrid.appendChild(card);
+    });
+  }
 }
+
+new SearchComponent();
