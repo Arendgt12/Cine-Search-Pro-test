@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cine-Search Pro</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main id="search-container" data-state="idle">
+      <header>
+        <h1>Cine-Search <span>Pro</span></h1>
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search for a movie..."
+          autocomplete="off"
+        />
+        <p id="status-text"></p>
+      </header>
+
+      <div class="ui-layer loading-spinner">Searching the archives...</div>
+      <div class="ui-layer error-message">
+        Something went wrong. Please try again.
+      </div>
+      <div class="ui-layer empty-message">
+        No movies found. Try another title!
+      </div>
+
+      <section id="results-grid"></section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
