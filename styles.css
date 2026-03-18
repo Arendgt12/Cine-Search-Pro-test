@@ -1,0 +1,157 @@
+/* 1 GLOBAL RESET & THEME */
+:root {
+  --bg-color: #0b0e11;
+  --card-bg: #15191e;
+  --accent-gold: #f5c518;
+  --text-main: #ffffff;
+  --text-muted: #9ca3af;
+  --error-red: #ef4444;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  line-height: 1.5;
+  padding: 40px 20px;
+}
+
+/* 2 HEADER & SEARCH */
+header {
+  max-width: 800px;
+  margin: 0 auto 40px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 20px;
+  letter-spacing: -1px;
+}
+
+h1 span {
+  color: var(--accent-gold);
+}
+
+#search-input {
+  width: 100%;
+  max-width: 500px;
+  padding: 14px 24px;
+  background-color: var(--card-bg);
+  border: 2px solid #2d343c;
+  border-radius: 50px;
+  color: white;
+  font-size: 1.1rem;
+  transition: var(--transition);
+  outline: none;
+}
+
+#search-input:focus {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 15px rgba(245, 197, 24, 0.2);
+}
+
+#status-text {
+  margin-top: 15px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* 3 STATE-DRIVEN UI LAYERS */
+.ui-layer {
+  display: none;
+  text-align: center;
+  padding: 40px;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+}
+
+[data-state="loading"] .loading-spinner {
+  display: block;
+  animation: pulse 1.5s infinite;
+}
+[data-state="error"] .error-message {
+  display: block;
+  color: var(--error-red);
+}
+[data-state="empty"] .empty-message {
+  display: block;
+}
+[data-state="success"] #status-text {
+  display: block;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+
+/* 4 THE RESULTS GRID*/
+#results-grid {
+  display: none;
+  max-width: 1200px;
+  margin: 0 auto;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 30px;
+}
+
+[data-state="success"] #results-grid {
+  display: grid;
+}
+
+/* 5. MOVIE CARDS */
+.movie-card {
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: var(--transition);
+  border: 1px solid #2d343c;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.movie-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--accent-gold);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.movie-card h3 {
+  padding: 16px 16px 4px;
+  font-size: 1.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movie-card p {
+  padding: 0 16px 16px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.highlight {
+  color: var(--accent-gold);
+  font-weight: bold;
+  text-decoration: underline;
+}
