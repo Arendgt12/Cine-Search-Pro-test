@@ -21,4 +21,18 @@ class SearchComponent {
     this.input.addEventListener("input", (e) => this.handleInput(e));
   }
 
+  handleInput(e) {
+    const query = e.target.value.trim();
+
+    // 1. Debounce
+    clearTimeout(this.debounceTimer);
+
+    if (!query) {
+      this.setState("idle");
+      this.resultsGrid.innerHTML = "";
+      return;
+    }
+
+}
+
 }
