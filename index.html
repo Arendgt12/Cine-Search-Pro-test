@@ -27,8 +27,19 @@
         No movies found. Try another title!
       </div>
 
-      <section id="results-grid"></section>
+      <div class="content-wrapper">
+        <section id="result-list"></section> 
+        
+        <aside id="detail-panel"></aside>
+      </div>
     </main>
+
+    <template id="movie-card-template">
+      <div class="movie-card">
+        <img class="card-poster" src="" alt="">
+        <h3 class="card-title"></h3>
+      </div>
+    </template>
 
     <script src="app.js"></script>
   </body>

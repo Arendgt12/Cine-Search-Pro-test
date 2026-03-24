@@ -1,4 +1,3 @@
-//API KEY
 const API_KEY = "b0e8031cb2c94c32c281586b7a9fbb9e";
 const BASE_URL = 'https://api.themoviedb.org/3';
 
@@ -32,13 +31,12 @@ function SearchComponent() {
   async function search(query) {
     const cacheKey = query.toLowerCase();
 
-    // Serve from memory if previously searched
     if (cache.has(cacheKey)) {
       render(cache.get(cacheKey), query);
       return;
     }
 
-    // (Abort Pattern)
+    //(Abort Pattern)
     if (controller) controller.abort();
     controller = new AbortController();
 
@@ -98,21 +96,27 @@ function SearchComponent() {
     try {
       const endpoints = [
         `${BASE_URL}/movie/${id}?api_key=${API_KEY}`,
-        `${BASE_URL}/movie/${id}/credits?api_key=${API_KEY}`,
-        `${BASE_URL}/movie/${id}/videos?api_key=${API_KEY}`
+        `${BASE_URL}/movie/${id}/credits?api_key=${API_KEY}`
       ];
 
-      // Execute all 3 network requests
+      // Execute network requests
       const results = await Promise.allSettled(endpoints.map(url => 
           fetch(url).then(res => res.ok ? res.json() : null)
       ));
 
-      const [details, credits, videos] = results.map(r => r.status === 'fulfilled' ? r.value : null);
+      const [details, credits] = results.map(r => r.status === 'fulfilled' ? r.value : null);
 
       if (!details) throw new Error("Crucial data missing");
 
       detailPanel.textContent = '';
       
+      // Navigation: Back button to return to the search results grid
+      const backBtn = document.createElement('button');
+      backBtn.textContent = "← Back to Results";
+      backBtn.className = "back-button";
+      backBtn.onclick = () => searchContainer.dataset.state = 'success';
+      detailPanel.append(backBtn);
+
       const h2 = document.createElement('h2');
       h2.textContent = details.title;
       detailPanel.append(h2);
@@ -127,10 +131,12 @@ function SearchComponent() {
           detailPanel.append(cast);
       }
 
+      // Switch to 'details' state to persist the view and hide the grid
+      searchContainer.dataset.state = 'details';
+
     } catch (err) {
       console.error('Details failed:', err);
-    } finally {
-      searchContainer.dataset.state = 'success';
+      searchContainer.dataset.state = 'error';
     }
   }
 

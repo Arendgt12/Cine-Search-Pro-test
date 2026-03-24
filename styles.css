@@ -1,4 +1,4 @@
-/* 1 GLOBAL RESET & THEME */
+/*1. GLOBAL RESET & THEME*/
 :root {
   --bg-color: #0b0e11;
   --card-bg: #15191e;
@@ -18,27 +18,16 @@
 body {
   background-color: var(--bg-color);
   color: var(--text-main);
-  font-family:
-    "Inter",
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
+  font-family: "Inter", sans-serif;
   line-height: 1.5;
   padding: 40px 20px;
 }
 
-/* 2 HEADER & SEARCH */
+/*2. HEADER & SEARCH */
 header {
   max-width: 800px;
   margin: 0 auto 40px;
   text-align: center;
-}
-
-h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  margin-bottom: 20px;
-  letter-spacing: -1px;
 }
 
 h1 span {
@@ -53,9 +42,8 @@ h1 span {
   border: 2px solid #2d343c;
   border-radius: 50px;
   color: white;
-  font-size: 1.1rem;
-  transition: var(--transition);
   outline: none;
+  transition: var(--transition);
 }
 
 #search-input:focus {
@@ -63,68 +51,53 @@ h1 span {
   box-shadow: 0 0 15px rgba(245, 197, 24, 0.2);
 }
 
-#status-text {
-  margin-top: 15px;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-/* 3 STATE-DRIVEN UI LAYERS */
+/*3. STATE-DRIVEN UI*/
 .ui-layer {
   display: none;
   text-align: center;
   padding: 40px;
-  font-size: 1.1rem;
   color: var(--text-muted);
 }
 
-[data-state="loading"] .loading-spinner {
-  display: block;
-  animation: pulse 1.5s infinite;
-}
-[data-state="error"] .error-message {
-  display: block;
-  color: var(--error-red);
-}
+/* Logic to toggle visibility state */
+[data-state="loading"] .loading-spinner,
+[data-state="error"] .error-message,
 [data-state="empty"] .empty-message {
-  display: block;
-}
-[data-state="success"] #status-text {
   display: block;
 }
 
 @keyframes pulse {
-  0% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
-/* 4 THE RESULTS GRID*/
-#results-grid {
+.loading-spinner { animation: pulse 1.5s infinite; }
+
+/*4. THE RESULTS GRID (Updated)*/
+#result-list {
   display: none;
   max-width: 1200px;
   margin: 0 auto;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 25px;
 }
 
-[data-state="success"] #results-grid {
+/* Show list on success, hide it when viewing specific details */
+[data-state="success"] #result-list {
   display: grid;
 }
 
-/* 5. MOVIE CARDS */
+[data-state="details"] #result-list {
+  display: none;
+}
+
+/*5. MOVIE CARDS & IMAGE*/
 .movie-card {
   background-color: var(--card-bg);
   border-radius: 12px;
   overflow: hidden;
-  transition: var(--transition);
   border: 1px solid #2d343c;
+  transition: var(--transition);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -136,22 +109,60 @@ h1 span {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
-.movie-card h3 {
-  padding: 16px 16px 4px;
-  font-size: 1.1rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.card-poster {
+  width: 100%;
+  height: 270px; 
+  object-fit: cover;
+  background-color: #000;
 }
 
-.movie-card p {
-  padding: 0 16px 16px;
-  color: var(--text-muted);
-  font-size: 0.85rem;
+.card-title {
+  padding: 15px;
+  font-size: 1rem;
+  text-align: center;
+  color: var(--text-main);
+  display: -webkit-box;
+  -webkit-box-orient: vertical; 
+  -webkit-line-clamp: 2;         
+  line-clamp: 2;                  
+  overflow: hidden;               
 }
 
 .highlight {
   color: var(--accent-gold);
   font-weight: bold;
-  text-decoration: underline;
+}
+
+/*6. DETAIL PANEL*/
+#detail-panel {
+  display: none; /* Hidden by default */
+  max-width: 800px;
+  margin: 30px auto;
+  padding: 20px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  border-left: 4px solid var(--accent-gold);
+}
+
+/* Displays only when a movie is selected */
+[data-state="details"] #detail-panel {
+  display: block;
+}
+
+/* Navigation button styling */
+.back-button {
+  background-color: var(--accent-gold);
+  color: var(--bg-color);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: var(--transition);
+}
+
+.back-button:hover {
+  opacity: 0.9;
+  transform: translateX(-5px);
 }
