@@ -1,118 +1,171 @@
 //API KEY
 const API_KEY = "b0e8031cb2c94c32c281586b7a9fbb9e";
+const BASE_URL = 'https://api.themoviedb.org/3';
 
-class SearchComponent {
-  constructor() {
-    // DOM Elements
-    this.container = document.getElementById("search-container");
-    this.input = document.getElementById("search-input");
-    this.resultsGrid = document.getElementById("results-grid");
-    this.statusText = document.getElementById("status-text");
+function SearchComponent() {
+  // DOM Elements
+  const input = document.getElementById('search-input');
+  const resultList = document.getElementById('result-list');
+  const detailPanel = document.getElementById('detail-panel');
+  const template = document.getElementById('movie-card-template');
+  const searchContainer = document.getElementById('search-container');
 
-    // State & Orchestration
-    this.cache = new Map();
-    this.debounceTimer = null; 
-    this.abortController = null;
+  if (!input || !resultList || !detailPanel || !template || !searchContainer) return;
+  
+  // App State
+  let activeIndex = -1;
+  const cache = new Map();
+  let timerId = null;
+  let controller = null;
 
-    this.init();
+  // Rate-limiting search to save bandwidth (Debounce)
+  function onInput() {
+    clearTimeout(timerId);
+    timerId = setTimeout(() => {
+      const query = input.value.trim();
+      if (query.length < 2) return;
+      search(query);
+    }, 300);
   }
 
-  init() {
-    this.input.addEventListener("input", (e) => this.handleInput(e));
-  }
+  // Network orchestration and data fetching
+  async function search(query) {
+    const cacheKey = query.toLowerCase();
 
-  handleInput(e) {
-    const query = e.target.value.trim();
-
-    // 1. Debounce
-    clearTimeout(this.debounceTimer);
-
-    if (!query) {
-      this.setState("idle");
-      this.resultsGrid.innerHTML = "";
+    // Serve from memory if previously searched
+    if (cache.has(cacheKey)) {
+      render(cache.get(cacheKey), query);
       return;
     }
 
-    // 2. Set the 300ms delay
-    this.debounceTimer = setTimeout(() => this.executeSearch(query), 300);
-  }
-
-  async executeSearch(query) {
-    // 3. CACHE CHECK
-    if (this.cache.has(query.toLowerCase())) {
-      console.log(`%c Cache Hit: ${query}`, "color: #00ff00");
-      this.render(this.cache.get(query.toLowerCase()));
-      return;
-    }
-
-    // 4. ABORT PATTERN
-    if (this.abortController) {
-      this.abortController.abort();
-    }
-
-    this.abortController = new AbortController();
-    const signal = this.abortController.signal;
-
-    this.setState("loading");
+    // (Abort Pattern)
+    if (controller) controller.abort();
+    controller = new AbortController();
 
     try {
-      const url = `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}`;
+      searchContainer.dataset.state = 'loading';
+      const res = await fetch(
+        `${BASE_URL}/search/movie?query=${encodeURIComponent(query)}&api_key=${API_KEY}`,
+        { signal: controller.signal }
+      );
 
-      const response = await fetch(url, { signal });
+      if (!res.ok) throw new Error('API error');
 
-      if (!response.ok) throw new Error("Network response was not ok");
+      const data = await res.json(); 
+      cache.set(cacheKey, data.results);
+      render(data.results, query);
 
-      const data = await response.json();
-
-      this.cache.set(query.toLowerCase(), data.results);
-
-      this.render(data.results);
-    } catch (error) {
-      if (error.name === "AbortError") {
-        console.log(
-          "%c Request Aborted (Red in Network Tab)",
-          "color: #ff9900",
-        );
-      } else {
-        console.error("Fetch Error:", error);
-        this.setState("error");
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      searchContainer.dataset.state = 'error';
+    } finally {
+      //Reset UI state only if not aborted
+      if (searchContainer.dataset.state === 'loading') {
+          searchContainer.dataset.state = 'success';
       }
     }
   }
 
-  setState(state) {
-    this.container.dataset.state = state;
+  // Efficient DOM rendering
+  function render(results, query) {
+    activeIndex = -1;
+    resultList.textContent = '';
+    const frag = new DocumentFragment(); 
+
+    results.forEach(movie => {
+        const clone = template.content.cloneNode(true);
+        const cardTitle = clone.querySelector('.card-title');
+        cardTitle.append(buildHighlightedTitle(movie.title, query)); 
+
+        const img = clone.querySelector('.card-poster');
+        img.src = movie.poster_path 
+            ? `https://image.tmdb.org/t/p/w92${movie.poster_path}` 
+            : 'https://via.placeholder.com/92x138?text=No+Image';
+    
+        const li = clone.querySelector('.movie-card');
+        li.addEventListener("click", () => fetchDetails(movie.id));
+
+        frag.appendChild(clone);
+    });
+
+    resultList.appendChild(frag);
+    searchContainer.dataset.state = results.length ? 'success' : 'empty';
   }
 
-  render(movies) {
-    if (movies.length === 0) {
-      this.setState("empty");
-      return;
+  // Concurrent fetching for deep-dive movie info
+  async function fetchDetails(id) {
+    searchContainer.dataset.state = 'loading';
+    try {
+      const endpoints = [
+        `${BASE_URL}/movie/${id}?api_key=${API_KEY}`,
+        `${BASE_URL}/movie/${id}/credits?api_key=${API_KEY}`,
+        `${BASE_URL}/movie/${id}/videos?api_key=${API_KEY}`
+      ];
+
+      // Execute all 3 network requests
+      const results = await Promise.allSettled(endpoints.map(url => 
+          fetch(url).then(res => res.ok ? res.json() : null)
+      ));
+
+      const [details, credits, videos] = results.map(r => r.status === 'fulfilled' ? r.value : null);
+
+      if (!details) throw new Error("Crucial data missing");
+
+      detailPanel.textContent = '';
+      
+      const h2 = document.createElement('h2');
+      h2.textContent = details.title;
+      detailPanel.append(h2);
+
+      const p = document.createElement('p');
+      p.textContent = details.overview;
+      detailPanel.append(p);
+
+      if (credits && credits.cast.length) {
+          const cast = document.createElement('p');
+          cast.innerHTML = `<strong>Cast:</strong> ` + credits.cast.slice(0, 5).map(a => a.name).join(', ');
+          detailPanel.append(cast);
+      }
+
+    } catch (err) {
+      console.error('Details failed:', err);
+    } finally {
+      searchContainer.dataset.state = 'success';
+    }
+  }
+
+  // Keyboard accessibility
+  function onKeyDown(e) {
+    const items = resultList.querySelectorAll('.movie-card');
+    if (e.key === 'ArrowDown') {
+      activeIndex = Math.min(activeIndex + 1, items.length - 1);
+    } else if (e.key === 'ArrowUp') {
+      activeIndex = Math.max(activeIndex - 1, 0);
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      items[activeIndex].click();
     }
 
-    this.setState("success");
-    this.statusText.textContent = `${movies.length} results found.`;
-
-    this.resultsGrid.innerHTML = "";
-
-    movies.forEach((movie) => {
-      const card = document.createElement("div");
-      card.className = "movie-card";
-
-      const title = document.createElement("h3");
-      title.textContent = movie.title;
-
-      const year = document.createElement("p");
-      year.textContent = movie.release_date
-        ? movie.release_date.split("-")[0]
-        : "N/A";
-
-      card.appendChild(title);
-      card.appendChild(year);
-      this.resultsGrid.appendChild(card);
-    });
+    items.forEach((item, idx) => item.classList.toggle('active', idx === activeIndex));
   }
+
+  input.addEventListener('input', onInput);
+  input.addEventListener('keydown', onKeyDown);
 }
 
-// Instantiate the component
-new SearchComponent();
+// UI Polish
+function buildHighlightedTitle(title, query) {
+  const container = document.createElement('span');
+  const idx = title.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) { container.textContent = title; return container; }  
+  
+  const before = document.createTextNode(title.slice(0, idx));  
+  const match = document.createElement('span');  
+  match.className = 'highlight';  
+  match.textContent = title.slice(idx, idx + query.length);
+  const after = document.createTextNode(title.slice(idx + query.length)); 
+  
+  container.append(before, match, after);  
+  return container;
+}
+
+SearchComponent();
